@@ -25,6 +25,7 @@ msrest==0.6.21
 oauthlib==3.1.1
 parse==1.19.0
 parse-type==0.5.2
+Pillow==8.4.0
 portalocker==2.3.2
 psycopg2==2.9.2
 pycparser==2.21
