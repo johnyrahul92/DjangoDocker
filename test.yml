@@ -1,0 +1,43 @@
+FROM python:3.7.10-slim-buster
+
+ENV PYTHONUNBUFFFERED 1
+ENV POETRY_HOME=/usr/local/bin
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget gnupg2 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget --quiet -O - https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN wget --quiet -O - https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list
+RUN apt-get update && ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools unixodbc-dev libgssapi-krb5-2  \
+    && echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc && source ~/.bashrc
+
+RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+    && echo "deb https://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends g++ python3-dev \
+    && apt-get install -y --no-install-recommends libffi-dev libmagic-dev \
+    && apt-get install -y --no-install-recommends postgresql-client-13 libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget --quiet -O - https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+COPY ["./poetry.lock", "pyproject.toml", "./"]
+
+RUN source $POETRY_HOME/env \
+    && poetry config virtualenvs.create false \
+    && poetry install --extras "production"
+
+COPY ["./compose/local/api/start.sh", "./compose/local/api/start_huey.sh", "./compose/production/api/entrypoint.sh", "./compose/production/api/wait_for_postgresql.py", "/"]
+
+RUN chmod +x /start.sh
+RUN chmod +x /start_huey.sh
+RUN chmod +x /entrypoint.sh
+
+WORKDIR /app
+ENTRYPOINT ["/entrypoint.sh"]
