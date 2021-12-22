@@ -6,7 +6,8 @@ ENV PYTHONUNBUFFERED 1
 
 # install psycopg2 dependencies
 RUN apk update \
-    && apk add postgresql-dev gcc python3-dev musl-dev libffi-dev openssl-dev cargo
+    && apk add postgresql-dev libc-dev g++ gcc python3-dev musl-dev libxml2 unixodbc-dev libffi-dev openssl-dev cargo \
+    && apk add jpeg-dev zlib-dev
 
 WORKDIR /usr/src/app
 
